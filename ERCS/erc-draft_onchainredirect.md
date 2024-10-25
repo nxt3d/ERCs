@@ -21,9 +21,9 @@ Cross-chain interactions between smart contracts are becoming more common. Exist
 
 The following error is used for redirecting calls across blockchains:
 
-<code>
+```
 error OnchainRedirect(address targetContract, uint256 chainId, bytes4 callbackFunction, bytes extraData);
-</code>
+```
 
 - **`targetContract`**: The address of the contract on the destination chain that should receive the call.
 
@@ -68,7 +68,7 @@ No backward compatibility issues are expected. This EIP does not change any exis
 
 Below is a simplified example of a contract that initiates a cross-chain call `crossChainCall` and uses a callback function `CrossChainCallCallback` to handle the result. The `extraData` in this example is set to `true` and is verified in the callback function.
 
-<code>
+```
 
 contract OriginatingContract {
 
@@ -99,7 +99,7 @@ contract TargetContract {
         return value;
     }
 }
-</code>
+```
 
 In this example:
 
