@@ -86,6 +86,7 @@ contract OriginatingContract {
 
     // Callback function to handle the result of the cross-chain call
     function CrossChainCallCallback(bytes calldata data, bytes calldata extraData) external returns (bytes memory result) {
+
         // Decode the extraData and ensure it is true
         bool isValid = abi.decode(extraData, (bool));
         require(isValid, "Invalid extraData");
@@ -96,8 +97,10 @@ contract OriginatingContract {
 }
 
 contract TargetContract {
+
     // Function on the target contract to be called from another chain
     function crossChainCall(uint256 value) external pure returns (uint256) {
+
         // Example logic, just returning the same value
         return value;
     }
