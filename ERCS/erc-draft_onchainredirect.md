@@ -64,10 +64,10 @@ By using a revert with `OnchainRedirect`, we maintain a fully onchain mechanism 
 
 ## Backwards Compatibility
 
-This EIP can be made to work seamlessly with ERC-3668 by using a special Data URL. Within the `urls` field of an `OffchainLookup` revert, a Data URL can be included that indicates an onchain redirection. The Data URL must use the MIME type `onchain-redirect` and include the target contract address, chain ID, and callback function selector, formatted as follows:
+This EIP can be made to work seamlessly with ERC-3668 by using a special URL in the format of an HTTPS link. Within the `urls` field of an `OffchainLookup` revert, an HTTPS URL with the domain `onchain-redirect.eth` can be included that indicates an onchain redirection. The URL must specify the target contract address, chain ID, and callback function selector, formatted as follows:
 
 ```
-data:onchain-redirect,chainId=1234&targetContract=0xTargetAddress&callbackFunction=0xCallbackSelector
+https://onchain-redirect.eth/?chainId=1234&targetContract=0xTargetAddress&callbackFunction=0xCallbackSelector
 ```
 
 The `OffchainLookup` error looks like:
@@ -77,10 +77,12 @@ error OffchainLookup(address sender, string[] urls, bytes callData, bytes4 callb
 ```
 
 where:
-- **`urls`** contains the data url with the MIME type `onchain-redirect`, e.g., `data:onchain-redirect,chainId=1234&targetContract=0xTargetAddress&callbackFunction=0xCallbackSelector`.
+- **`urls`** contains the HTTPS URL indicating an onchain redirect, e.g., ```https://onchain-redirect.eth/?chainId=1234&targetContract=0xTargetAddress&callbackFunction=0xCallbackSelector</code>.
 - **`extraData`** is used as specified in this ERC.
 
-When a client detects this Data URL within an `OffchainLookup`, it can cease doing the `OffchainLookup` and switch to doing an Onchain Redirect proceeding with step 2 from the list of steps above. The client will perform the cross-chain call using the data url values and `extraData` in exactly the same way as described in the `OnchainRedirect` specification. This allows clients to seamlessly interpret and handle both `OffchainLookup` and `OnchainRedirect` calls in a compatible manner, where a client can choose whether to do an offchain lookup or a onchain redirect. 
+When a client detects this HTTPS URL within an `OffchainLookup`, it can interpret the `OffchainLookup` as an `OnchainRedirect`. The client will cease the `OffchainLookup` process and proceed with step 2 of the `OnchainRedirect` specification, performing the cross-chain call using the parameters extracted from the HTTPS URL along with `extraData`, as specified by this ERC.
+
+This enables clients to seamlessly interpret and handle both `OffchainLookup` and `OnchainRedirect` calls in a compatible manner, where the client can choose whether to perform an offchain lookup or execute an onchain redirect based on the URL format.
 
 ## Reference Implementation
 
