@@ -34,7 +34,7 @@ error OnchainRedirect(address targetContract, uint256 chainId, bytes4 callbackFu
   The callback function must have the following parameters:
   - **`bytes data`**: The ABI encoded result of the cross-chain call.
   - **`bytes extraData`**: The extra data originally provided during the redirect.
-  - **Return value**: The function must return **`bytes result`**, which contains the ABI encoded result of the cross-chain call or revert with an error if necessary.
+  - **Return value**: The callback function must return the same return parameters as the originating function's return parameters.
 
 - **`extraData`**: Arbitrary data that must be passed to the `callbackFunction` along with the result of the call to the `targetContract` as ABI encoded bytes.
 
