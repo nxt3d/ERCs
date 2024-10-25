@@ -26,17 +26,17 @@ error OnchainRedirect(address targetContract, uint256 chainId, bytes4 callbackFu
 ```
 
 - **`targetContract`**: The address of the contract on the destination chain that should receive the call.
-
-- **`chainId`**: The ID of the blockchain where the `targetContract` resides. The `chainId` may be the same as the originating contract, however, in this case, the `targetContract` address must be different to prevent self-redirects.  
+  
+- **`chainId`**: The ID of the blockchain where the `targetContract` resides. The `chainId` may be the same as the originating contract; however, in this case, the `targetContract` address must be different to prevent self-redirects.
 
 - **`callbackFunction`**: A 4-byte selector for a function on the originating contract to handle the result of the cross-chain call. This field cannot be empty and must be specified.
 
   The callback function must have the following parameters:
-  - **`bytes data`**: The ABI encoded result of the cross-chain call.
+  - **`bytes data`**: The ABI-encoded result of the cross-chain call.
   - **`bytes extraData`**: The extra data originally provided during the redirect.
   - **Return value**: The callback function must return the same return parameters as the originating function's return parameters.
 
-- **`extraData`**: Arbitrary data that must be passed to the `callbackFunction` along with the result of the call to the `targetContract` as ABI encoded bytes.
+- **`extraData`**: Arbitrary data that must be passed to the `callbackFunction` along with the result of the call to the `targetContract` as ABI-encoded bytes.
 
 ### Originating and Target Contract Functions
 
@@ -49,7 +49,9 @@ The function on the originating contract can also be executed directly if it doe
 ### Client Handling
 
 1. **Initial Call**: The client calls a function on the originating contract. If the function reverts with `OnchainRedirect`, the client extracts the `targetContract`, `chainId`, `callbackFunction`, and `extraData` from the revert error. If the call doesn't revert, the client handles the function call normally. 
+
 2. **Cross-Chain Call**: The client constructs a call on the specified chain (`chainId`), targeting the `targetContract`. The call to the `targetContract` must use the same function signature as the originating contract’s function and be the same type of call (i.e., `staticcall` for read-only or `call` for state-changing).
+
 3. **Handling the Response**: The client must ABI-encode the return values of the call on the `targetContract` and pass them as bytes `data`, along with the bytes `extraData` from the `OnchainRedirect` revert error, to the callback function `callbackFunction` on the originating contract.
 
 4. **Decoding the Callback Function's Results**: The client must ABI-decode the bytes returned by the `callbackFunction` using the expected return types of the originating contract’s function.
@@ -62,24 +64,23 @@ By using a revert with `OnchainRedirect`, we maintain a fully onchain mechanism 
 
 ## Backwards Compatibility
 
-This EIP can be made compatible with ERC-3668 by using a special `data:` URL. Within the `urls` field of an `OffchainLookup` revert, a `data:` URL can be included that indicates an onchain redirection. The `data` URL should use the MIME type `onchain-redirect` and include the target contract address and chain ID, formatted as follows:
+This EIP can be made to work seamlessly with ERC-3668 by using a special Data URL. Within the `urls` field of an `OffchainLookup` revert, a Data URL can be included that indicates an onchain redirection. The Data URL must use the MIME type `onchain-redirect` and include the target contract address, chain ID, and callback function selector, formatted as follows:
 
 ```
-data:onchain-redirect,chainId=1234&targetContract=0xTargetAddress
+data:onchain-redirect,chainId=1234&targetContract=0xTargetAddress&callbackFunction=0xCallbackSelector
 ```
 
-The `OffchainLookup` error would look like:
+The `OffchainLookup` error looks like:
 
 ```
 error OffchainLookup(address sender, string[] urls, bytes callData, bytes4 callbackFunction, bytes extraData);
 ```
 
 where:
-- **`urls`** contains the `data:onchain-redirect,chainId=1234&targetContract=0xTargetAddress` URL.
-- **`callbackFunction`** specifies the originating contract’s callback function.
+- **`urls`** contains the data url with the MIME type `onchain-redirect`, e.g., `data:onchain-redirect,chainId=1234&targetContract=0xTargetAddress&callbackFunction=0xCallbackSelector`.
 - **`extraData`** is used as specified in this ERC.
 
-When a client detects this `data:` URL within an `OffchainLookup`, it can interpret the `OffchainLookup` as an `OnchainRedirect`. The client will proceed to perform the cross-chain call according to the specifications of this ERC, using the `callbackFunction` and `extraData` in exactly the same way as described in the `OnchainRedirect` specification. This allows clients to seamlessly interpret and handle both `OffchainLookup` and `OnchainRedirect` calls in a compatible manner.
+When a client detects this Data URL within an `OffchainLookup`, it can cease doing the `OffchainLookup` and switch to doing an Onchain Redirect proceeding with step 2 from the list of steps above. The client will perform the cross-chain call using the data url values and `extraData` in exactly the same way as described in the `OnchainRedirect` specification. This allows clients to seamlessly interpret and handle both `OffchainLookup` and `OnchainRedirect` calls in a compatible manner, where a client can choose whether to do an offchain lookup or a onchain redirect. 
 
 ## Reference Implementation
 
