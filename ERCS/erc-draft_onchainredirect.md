@@ -74,13 +74,10 @@ contract OriginatingContract {
     // Function that triggers the cross-chain call and reverts with OnchainRedirect
     function crossChainCall(uint256 value) external pure returns (uint256){
 
+        // Set the error values
         bytes4 callbackFunction = this.CrossChainCallCallback.selector;
         bytes memory extraData = abi.encode(true);  // Using true as extraData
-
-        // Target Contract Address
         address targetContract = address(0x123);
-
-        // Chain Id
         uint256 chainId = 100;
 
         // Revert to signal OnchainRedirect
