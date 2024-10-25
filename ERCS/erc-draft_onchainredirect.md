@@ -11,13 +11,7 @@ created: 2024-10-24
 
 ## Abstract
 
-Contracts wishing to redirect function calls to other contracts on different blockchains may revert using 
-
-```
-error OnchainRedirect(address targetContract, uint256 chainId, bytes4 callbackFunction, bytes extraData);
-```
-
-Clients supporting this specification will be responsible for invoking the same function call on the specified `targetContract` on the provided `chainId`. The result of the call on the target contract will be passed to the callback function on the originating contract, which can be verified if necessary.
+Contracts wishing to redirect function calls to other contracts on different blockchains may revert using the error `OnchainRedirect`. Clients supporting this specification will be responsible for invoking the same function call on the specified `targetContract` on the provided `chainId`. The result of the call on the target contract will be passed to the callback function on the originating contract, which can be verified if necessary.
 
 ## Motivation
 
