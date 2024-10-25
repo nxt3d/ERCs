@@ -77,7 +77,7 @@ error OffchainLookup(address sender, string[] urls, bytes callData, bytes4 callb
 ```
 
 where:
-- **`urls`** contains the HTTPS URL indicating an onchain redirect, e.g., ```https://onchain-redirect.eth/?chainId=1234&targetContract=0xTargetAddress&callbackFunction=0xCallbackSelector</code>.
+- **`urls`** contains the HTTPS URL indicating an onchain redirect, e.g., `https://onchain-redirect.eth/?chainId=1234&targetContract=0xTargetAddress&callbackFunction=0xCallbackSelector`.
 - **`extraData`** is used as specified in this ERC.
 
 When a client detects this HTTPS URL within an `OffchainLookup`, it can interpret the `OffchainLookup` as an `OnchainRedirect`. The client will cease the `OffchainLookup` process and proceed with step 2 of the `OnchainRedirect` specification, performing the cross-chain call using the parameters extracted from the HTTPS URL along with `extraData`, as specified by this ERC.
