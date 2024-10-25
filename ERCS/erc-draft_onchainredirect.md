@@ -27,7 +27,7 @@ error OnchainRedirect(address targetContract, uint256 chainId, bytes4 callbackFu
 
 - **`targetContract`**: The address of the contract on the destination chain that should receive the call.
 
-- **`chainId`**: The ID of the blockchain where the `targetContract` resides.
+- **`chainId`**: The ID of the blockchain where the `targetContract` resides. The `chain id` may be the same as the originating contract, however in this case the `targetContract` address must be different to prevent self redirects.  
 
 - **`callbackFunction`**: A 4-byte selector for a function on the originating contract to handle the result of the cross-chain call. If no callback is needed, this field can be left empty (zeroed out).
 
