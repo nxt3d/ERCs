@@ -11,7 +11,13 @@ created: 2024-10-24
 
 ## Abstract
 
-Contracts wishing to redirect function calls to other contracts on different blockchains may revert using the   `OnchainRedirect` error. Clients supporting this specification will be responsible for invoking the same function call on the specified `targetContract` on the provided `chainId`. The result of the call on the target contract will be passed to the callback function on the originating contract, which can be verified if necessary.
+Contracts wishing to redirect function calls to other contracts on different blockchains may revert using 
+
+```
+error OnchainRedirect(address targetContract, uint256 chainId, bytes4 callbackFunction, bytes extraData);
+```
+
+Clients supporting this specification will be responsible for invoking the same function call on the specified `targetContract` on the provided `chainId`. The result of the call on the target contract will be passed to the callback function on the originating contract, which can be verified if necessary.
 
 ## Motivation
 
@@ -21,9 +27,9 @@ Cross-chain interactions between smart contracts are becoming more common. Exist
 
 The following error is used for redirecting calls across blockchains:
 
-<code>
+```
 error OnchainRedirect(address targetContract, uint256 chainId, bytes4 callbackFunction, bytes extraData);
-</code>
+```
 
 - **`targetContract`**: The address of the contract on the destination chain that should receive the call.
 
@@ -62,13 +68,30 @@ By using a revert with `OnchainRedirect`, we maintain a fully onchain mechanism 
 
 ## Backwards Compatibility
 
-No backward compatibility issues are expected. This EIP does not change any existing functionality but introduces a new standard for cross-chain calls handled by the client.
+This EIP can be made compatible with ERC-3668 by using a special `data:` URL. Within the `urls` field of an `OffchainLookup` revert, a `data:` URL can be included that indicates an onchain redirection. The `data` URL should use the MIME type `onchain-redirect` and include the target contract address and chain ID, formatted as follows:
+
+```
+data:onchain-redirect,chainId=1234&targetContract=0xTargetAddress
+```
+
+The `OffchainLookup` error would look like:
+
+```
+error OffchainLookup(address sender, string[] urls, bytes callData, bytes4 callbackFunction, bytes extraData);
+```
+
+where:
+- **`urls`** contains the `data:onchain-redirect,chainId=1234&targetContract=0xTargetAddress` URL.
+- **`callbackFunction`** specifies the originating contract’s callback function.
+- **`extraData`** is used as specified in this ERC.
+
+When a client detects this `data:` URL within an `OffchainLookup`, it can interpret the `OffchainLookup` as an `OnchainRedirect`. The client will proceed to perform the cross-chain call according to the specifications of this ERC, using the `callbackFunction` and `extraData` in exactly the same way as described in the `OnchainRedirect` specification. This allows clients to seamlessly interpret and handle both `OffchainLookup` and `OnchainRedirect` calls in a compatible manner.
 
 ## Reference Implementation
 
 Below is a simplified example of a contract that initiates a cross-chain call `crossChainCall` and uses a callback function `CrossChainCallCallback` to handle the result. The `extraData` in this example is set to `true` and is verified in the callback function.
 
-<code>
+```
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
@@ -98,9 +121,9 @@ contract OriginatingContract {
         result = data;
     }
 }
-</code>
+```
 
-<code>
+```
 contract TargetContract {
 
     // Function on the target contract to be called from another chain
@@ -110,7 +133,7 @@ contract TargetContract {
         return value;
     }
 }
-</code>
+```
 
 In this example:
 
@@ -129,7 +152,7 @@ In this example:
 Clients must follow the specification carefully to:
 
 - Ensure they call the correct `targetContract` on the correct `chainId`.
-- If required, provide the results of the target contract and extra data from the revert error to the callback function, ensuring that the callback can properly validate the results if needed.
+- Provide the results of the target contract function, ABI-encoded as bytes, and extra data from the revert error to the callback function, ensuring that the callback can properly validate the results if needed.
 
 ## Copyright
 
