@@ -69,13 +69,19 @@ No backward compatibility issues are expected. This EIP does not change any exis
 Below is a simplified example of a contract that initiates a cross-chain call `crossChainCall` and uses a callback function `CrossChainCallCallback` to handle the result. The `extraData` in this example is set to `true` and is verified in the callback function.
 
 ```
-
 contract OriginatingContract {
 
     // Function that triggers the cross-chain call and reverts with OnchainRedirect
-    function crossChainCall(address targetContract, uint256 chainId, bytes calldata data) external {
+    function crossChainCall(uint256 value) external pure returns (uint256){
+
         bytes4 callbackFunction = this.CrossChainCallCallback.selector;
         bytes memory extraData = abi.encode(true);  // Using true as extraData
+
+        // Target Contract Address
+        address targetContract = address(0x123);
+
+        // Chain Id
+        uint256 chainId = 100;
 
         // Revert to signal OnchainRedirect
         revert OnchainRedirect(targetContract, chainId, callbackFunction, extraData);
