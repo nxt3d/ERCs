@@ -150,6 +150,7 @@ Clients must follow the specification carefully to:
 
 - Ensure they call the correct `targetContract` on the correct `chainId`.
 - Provide the results of the target contract function, ABI-encoded as bytes, and extra data from the revert error to the callback function, ensuring that the callback can properly validate the results if needed.
+- The https://onchain-redirect.eth url is not intented to be used as an endpoint. Clients should not try to resolve the domain. 
 
 ## Copyright
 
