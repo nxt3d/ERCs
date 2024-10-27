@@ -15,7 +15,7 @@ Contracts wishing to redirect function calls to other contracts on different blo
 
 ## Motivation
 
-Cross-chain interactions between smart contracts are becoming more common. Existing solutions that rely on off-chain mechanisms such as URLs are unsuitable for decentralized censorship-resistant applications requiring purely onchain redirection. This EIP provides a standardized method to perform cross-chain smart contract interactions, creating a modular framework without requiring off-chain services.
+Cross-chain interactions between smart contracts are becoming more common. Existing solutions that rely on off-chain mechanisms such as URLs are unsuitable for decentralized, censorship-resistant applications requiring purely onchain redirection. This EIP provides a standardized method to perform cross-chain smart contract interactions, creating a modular framework without requiring off-chain services.
 
 ## Specification
 
@@ -26,7 +26,7 @@ error OnchainRedirect(address targetContract, uint256 chainId, bytes4 callbackFu
 ```
 
 - **`targetContract`**: The address of the contract on the destination chain that should receive the call.
-  
+
 - **`chainId`**: The ID of the blockchain where the `targetContract` resides. The `chainId` may be the same as the originating contract; however, in this case, the `targetContract` address must be different to prevent self-redirects.
 
 - **`callbackFunction`**: A 4-byte selector for a function on the originating contract to handle the result of the cross-chain call. This field cannot be empty and must be specified.
@@ -48,9 +48,9 @@ The function on the originating contract can also be executed directly if it doe
 
 ### Client Handling
 
-1. **Initial Call**: The client calls a function on the originating contract. If the function reverts with `OnchainRedirect`, the client extracts the `targetContract`, `chainId`, `callbackFunction`, and `extraData` from the revert error. If the call doesn't revert, the client handles the function call normally. 
+1. **Initial Call**: The client calls a function on the originating contract. If the function reverts with `OnchainRedirect`, the client extracts the `targetContract`, `chainId`, `callbackFunction`, and `extraData` from the revert error. If the call doesn't revert, the client handles the function call normally.
 
-2. **Cross-Chain Call**: The client constructs a call on the specified chain (`chainId`), targeting the `targetContract`. The call to the `targetContract` must use the same function signature as the originating contract’s function and be the same type of call (i.e., `staticcall` for read-only or `call` for state-changing).
+2. **Cross-Chain Call**: The client must recreate the original call, making the exact same call to the `targetContract` on the specified chain (`chainId`). The call to the `targetContract` must use the same function signature as the originating contract’s function and be the same type of call (i.e., `staticcall` for read-only or `call` for state-changing).
 
 3. **Handling the Response**: The client must ABI-encode the return values of the call on the `targetContract` and pass them as bytes `data`, along with the bytes `extraData` from the `OnchainRedirect` revert error, to the callback function `callbackFunction` on the originating contract.
 
@@ -64,25 +64,28 @@ By using a revert with `OnchainRedirect`, we maintain a fully onchain mechanism 
 
 ## Backwards Compatibility
 
-This EIP can be made to work seamlessly with ERC-3668 by using a special URL in the format of an HTTPS link. Within the `urls` field of an `OffchainLookup` revert, an HTTPS URL with the domain `onchain-redirect.eth` can be included that indicates an onchain redirection. The URL must specify the target contract address, chain ID, and callback function selector, formatted as follows:
+This EIP can be made to work seamlessly with ERC-3668 by using a special URL in the format of an HTTPS link. Within the `urls` field of an `OffchainLookup` revert, there must be only one URL that supports onchain redirect. The URL must include all the parameters required for the onchain redirect: `onchain-redirect=true`, `targetContract`, `chainId`, and `callbackFunction`. The actual URL used does not matter and can be any valid URL. It is also possible for the URL to be directed to a functional ERC-3668 offchain server.
+
+For example:
 
 ```
-https://onchain-redirect.eth/?chainId=1234&targetContract=0xTargetAddress&callbackFunction=0xCallbackSelector
+https://example.com/api?onchain-redirect=true&targetContract=0xTargetAddress&chainId=1234&callbackFunction=0xCallbackSelector
 ```
 
-The `OffchainLookup` error looks like:
+The ERC-3668 `OffchainLookup` error looks like:
 
 ```
 error OffchainLookup(address sender, string[] urls, bytes callData, bytes4 callbackFunction, bytes extraData);
 ```
 
 where:
-- **`urls`** contains the HTTPS URL indicating an onchain redirect, e.g., `https://onchain-redirect.eth/?chainId=1234&targetContract=0xTargetAddress&callbackFunction=0xCallbackSelector`.
-- **`extraData`** is used as specified in this ERC.
 
-When a client detects this HTTPS URL within an `OffchainLookup`, it can interpret the `OffchainLookup` as an `OnchainRedirect`. The client will cease the `OffchainLookup` process and proceed with step 2 of the `OnchainRedirect` specification, performing the cross-chain call using the parameters extracted from the HTTPS URL along with `extraData`, as specified by this ERC.
+- **`urls`** contains only one URL that includes the parameters `onchain-redirect`, `targetContract`, `chainId`, and `callbackFunction`.
+- **`extraData`** is used as specified in this EIP.
 
-This enables clients to seamlessly interpret and handle both `OffchainLookup` and `OnchainRedirect` calls in a compatible manner, where the client can choose whether to perform an offchain lookup or execute an onchain redirect based on the URL format.
+When a client detects a URL within an `OffchainLookup` that contains the parameter `onchain-redirect=true` along with `targetContract`, `chainId`, and `callbackFunction`, it can interpret the `OffchainLookup` as an `OnchainRedirect`. The client will cease the `OffchainLookup` process and proceed with step 2 of the `OnchainRedirect` specification, performing the cross-chain call by recreating the same function call on the `targetContract` and using the parameters extracted from the URL and the revert error along with `extraData`, as specified by this EIP.
+
+This approach ensures that necessary information for the onchain redirect is included in the URL, allowing clients to seamlessly interpret and handle both `OffchainLookup` and `OnchainRedirect` calls in a compatible manner.
 
 ## Reference Implementation
 
@@ -150,7 +153,7 @@ Clients must follow the specification carefully to:
 
 - Ensure they call the correct `targetContract` on the correct `chainId`.
 - Provide the results of the target contract function, ABI-encoded as bytes, and extra data from the revert error to the callback function, ensuring that the callback can properly validate the results if needed.
-- The https://onchain-redirect.eth url is not intented to be used as an endpoint. Clients should not try to resolve the domain. 
+- If there are more than one URL in the `urls` of the OffchainLookup of ERC-3668, that containt the `onchain-redirect` paramter, it may introduce a conflict between parameters, and none of the url parameters should not be used for this ERC. 
 
 ## Copyright
 
