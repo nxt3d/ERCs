@@ -72,7 +72,7 @@ For example:
 https://example.com/api?onchain-redirect=true&targetContract=0xTargetAddress&chainId=1234&callbackFunction=0xCallbackSelector
 ```
 
-The ERC-3668 `OffchainLookup` error looks like:
+The ERC-3668 `OffchainLookup` error:
 
 ```
 error OffchainLookup(address sender, string[] urls, bytes callData, bytes4 callbackFunction, bytes extraData);
