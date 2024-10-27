@@ -83,7 +83,7 @@ where:
 - **`urls`** contains only one URL that includes the parameters `onchain-redirect`, `targetContract`, `chainId`, and `callbackFunction`.
 - **`extraData`** is used as specified in this EIP.
 
-When a client detects a URL within an `OffchainLookup` that contains the parameter `onchain-redirect=true` along with `targetContract`, `chainId`, and `callbackFunction`, it can interpret the `OffchainLookup` as an `OnchainRedirect`. The client will cease the `OffchainLookup` process and proceed with step 2 of the `OnchainRedirect` specification, performing the cross-chain call by recreating the same function call on the `targetContract` and using the parameters extracted from the URL and the revert error along with `extraData`, as specified by this EIP.
+When a client detects a URL within an `OffchainLookup` that contains the parameter `onchain-redirect=true` along with `targetContract`, `chainId`, and `callbackFunction`, it can interpret the `OffchainLookup` as an `OnchainRedirect`. The client will cease the ERC-3668 steps and proceed with step 2 of the `OnchainRedirect` specification, performing the cross-chain call by recreating the same function call on the `targetContract` and using the parameters extracted from the URL and the revert error along with `extraData`, as specified by this EIP.
 
 This approach ensures that necessary information for the onchain redirect is included in the URL, allowing clients to seamlessly interpret and handle both `OffchainLookup` and `OnchainRedirect` calls in a compatible manner.
 
