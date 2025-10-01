@@ -11,7 +11,7 @@ created: 2025-09-30
 
 ## Abstract
 
-This ERC defines the backup-uris: URI scheme for use as the return of tokenURI(uint256 tokenId) by ERC-721, ERC-6909, and ERC-8004 compliant contracts that implement the getMetadata function (ERC-XXXX). The scheme provides a compact, URI-based specification for providing backup URIs as fallback metadata sources. The URI acts as a list of backup URIs separated by semicolons, allowing clients to fallback to alternative metadata sources when the primary source is unavailable.
+This ERC defines the `backup-uris` metadata key for use by ERC-721, ERC-6909, and ERC-8004 compliant contracts that implement the getMetadata function (ERC-XXXX). The metadata key provides a standardized way to specify backup URIs as fallback metadata sources. The value is a list of backup URIs separated by semicolons, allowing clients to fallback to alternative metadata sources when the primary source is unavailable.
 
 ## Motivation
 
