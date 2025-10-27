@@ -1,7 +1,7 @@
 ---
 eip: XXXX
 title: Token URI Hash for Onchain Metadata Verification
-description: A standard field for storing a truncated hash of token URI JSON data to enable verification of offchain URL queried JSON data.
+description: A standard field for storing a hash of token URI JSON data to enable verification of offchain URL queried JSON data.
 author: Prem Makeig (@nxt3d)
 discussions-to: 
 status: Draft
