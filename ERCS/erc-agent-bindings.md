@@ -12,7 +12,7 @@ requires: 8004
 
 ## Abstract
 
-This ERC defines a standard onchain metadata record and verification interface for expressing that an [ERC-8004](./erc-8004.md) agent identity is bound to an external NFT or tokenized asset contract. The metadata record stores the binding contract, token standard, token contract, and token identifier in a compact binary format under a reserved metadata key.
+This ERC defines a standard onchain metadata record and verification interface for expressing that an [ERC-8004](./erc-8004.md) agent identity is bound to an external NFT or tokenized asset contract. The metadata record stores the binding contract, token standard, token contract, and token identifier in a compact binary format under a reserved metadata key. The binding contract and token contract MAY be different contracts or the same contract.
 
 ## Motivation
 
@@ -24,7 +24,7 @@ Without a standard metadata format:
 - marketplaces and wallets cannot decode bound-token information consistently
 - indexers must support adapter-specific formats
 
-This ERC provides a canonical metadata key, binary encoding, and verification interface so clients can discover the binding contract, decode the bound token, and verify the canonical bound-token record for an agent.
+This ERC provides a canonical metadata key, binary encoding, and verification interface so clients can discover the binding contract, decode the bound token, and verify the canonical bound-token record for an agent, whether the binding logic lives in a separate adapter contract or directly in the token contract itself.
 
 ## Specification
 
@@ -86,7 +86,7 @@ The binary layout is:
 
 The fields have the following meanings:
 
-- `bindingContract`: 20-byte EVM address of the binding or adapter contract that governs the relationship
+- `bindingContract`: 20-byte EVM address of the binding or adapter contract that governs the relationship; this MAY equal `tokenContract`
 - `tokenStandard`: 1-byte enum describing the bound token standard
 - `tokenContract`: 20-byte EVM address of the bound token contract
 - `tokenIdLength`: 1-byte unsigned integer describing the number of bytes in `compactTokenId`
@@ -138,6 +138,8 @@ Clients verifying an [ERC-8004](./erc-8004.md) binding under this ERC MUST:
 
 If any step fails, clients MUST treat the binding relationship as unverified.
 
+The `bindingContract` and `tokenContract` MAY be different addresses or the same address. Clients MUST NOT assume they are distinct.
+
 ### Example Encoding
 
 For:
@@ -163,6 +165,8 @@ the metadata payload is:
 ### Why store the binding contract?
 
 The token contract and token id alone are not sufficient. The same token may be interpreted differently by different adapter or binding contracts. Including the binding contract makes the control system explicitly discoverable and lets clients inspect or query the contract that actually defines the authorization rules.
+
+In some implementations, the token contract itself defines the binding logic. In those cases, `bindingContract` and `tokenContract` are the same address.
 
 ### Why include the token standard as an enum byte?
 
