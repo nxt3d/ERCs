@@ -1,4 +1,5 @@
 ---
+eip: 8217
 title: Agent NFT Identity Bindings
 description: A standard metadata record for binding ERC-8004 agents to external NFT controllers.
 author: Prem Makeig (@nxt3d)
