@@ -13,7 +13,7 @@ requires: 8004
 
 ## Abstract
 
-This ERC defines a standard onchain metadata record and verification interface for expressing that an [ERC-8004](./erc-8004.md) agent identity is bound to an external NFT or tokenized asset contract. The metadata record stores the binding contract, token standard, token contract, and token identifier in a compact binary format under a reserved metadata key. The binding contract and token contract MAY be different contracts or the same contract.
+This ERC defines a standard onchain metadata record and verification interface for expressing that an [ERC-8004](./erc-8004.md) agent identity is bound to an external NFT or tokenized asset contract. The metadata record stores only the binding contract address (20 bytes) under a reserved metadata key. Token standard, token contract, and token id are read from that contract via `bindingOf(agentId)` and are not duplicated in metadata.
 
 ## Motivation
 
@@ -25,7 +25,7 @@ Without a standard metadata format:
 - marketplaces and wallets cannot decode bound-token information consistently
 - indexers must support adapter-specific formats
 
-This ERC provides a canonical metadata key, binary encoding, and verification interface so clients can discover the binding contract, decode the bound token, and verify the canonical bound-token record for an agent, whether the binding logic lives in a separate adapter contract or directly in the token contract itself.
+This ERC provides a canonical metadata key, minimal binary encoding, and verification interface so clients can discover the binding contract and read the canonical bound-token record from `bindingOf(agentId)`, whether the binding logic lives in a separate adapter contract or directly in the token contract itself.
 
 ## Specification
 
@@ -71,58 +71,30 @@ agent-binding
 
 ### Binding Record Format
 
-The metadata value for `agent-binding` MUST be encoded as:
+The metadata value for `agent-binding` MUST be exactly the 20-byte EVM address of the binding or adapter contract:
 
 ```solidity
-abi.encodePacked(bindingContract, tokenStandard, tokenContract, tokenIdLength, compactTokenId)
+abi.encodePacked(bindingContract)
 ```
 
-The binary layout is:
+For example, the stored `bytes` are exactly the 20-byte address:
 
 ```text
-┌─────────────────┬───────────────┬───────────────┬───────────────┬────────────────┐
-│ bindingContract │ tokenStandard │ tokenContract │ tokenIdLength │ compactTokenId │
-└─────────────────┴───────────────┴───────────────┴───────────────┴────────────────┘
+0x9c4e8f2a1b7d6e3c0a5f8d2b9e1c4a7f3d6e8b0c
 ```
 
-The fields have the following meanings:
+The field means:
 
-- `bindingContract`: 20-byte EVM address of the binding or adapter contract that governs the relationship; this MAY equal `tokenContract`
-- `tokenStandard`: 1-byte enum describing the bound token standard
-- `tokenContract`: 20-byte EVM address of the bound token contract
-- `tokenIdLength`: 1-byte unsigned integer describing the number of bytes in `compactTokenId`
-- `compactTokenId`: variable-length minimal big-endian encoding of the bound token id
+- `bindingContract`: address of the contract that implements `IERCAgentBindings` and returns the canonical `Binding` for `bindingOf(agentId)`.
 
-### Token Standard Enum
-
-The `tokenStandard` byte MUST use the following values:
-
-- `0x00`: ERC-721
-- `0x01`: ERC-1155
-- `0x02`: ERC-6909
-
-Values outside this set are reserved for future extensions and MUST NOT be emitted by implementations compliant with this version of the ERC.
-
-### Compact Token ID Encoding
-
-The `compactTokenId` field MUST encode the token id in minimal big-endian form:
-
-- if `tokenId == 0`, `tokenIdLength` MUST be `0` and `compactTokenId` MUST be omitted
-- if `tokenId > 0`, `tokenIdLength` MUST equal the minimum number of bytes required to represent the token id
-- leading zero bytes MUST NOT be included
-
-Examples:
-
-- token id `0` encodes as `tokenIdLength = 0`
-- token id `5` encodes as `tokenIdLength = 1`, `compactTokenId = 0x05`
-- token id `0x1234` encodes as `tokenIdLength = 2`, `compactTokenId = 0x1234`
+Token standard, token contract, and token id MUST be obtained only from `bindingOf` on this contract (see `IERCAgentBindings.Binding`).
 
 ### Required Behavior
 
 An implementation that uses this ERC to represent a binding for an [ERC-8004](./erc-8004.md) agent:
 
-1. MUST write the binding record under the `agent-binding` key
-2. MUST ensure the binary payload matches the format defined above
+1. MUST write the binding record under the `agent-binding` key as exactly 20 bytes (the binding contract address)
+2. MUST ensure the address matches the contract that serves `bindingOf` for this agent
 3. MUST treat `agent-binding` as a reserved key and prevent untrusted callers from overwriting it arbitrarily
 4. MAY define any control semantics it wants in the binding contract itself, including ERC-721 ownership or ERC-1155 / ERC-6909 balance-based control
 
@@ -133,33 +105,22 @@ This ERC standardizes discovery and canonical binding verification only. It does
 Clients verifying an [ERC-8004](./erc-8004.md) binding under this ERC MUST:
 
 1. read the `agent-binding` metadata from the [ERC-8004](./erc-8004.md) registry
-2. decode `bindingContract`, `tokenStandard`, `tokenContract`, and `tokenId`
-3. call `bindingOf(agentId)` on `bindingContract`
-4. verify that the returned binding matches the decoded metadata
+2. interpret the value as a single `address` (`bindingContract`); the length MUST be 20 bytes
+3. call `bindingOf(agentId)` on `bindingContract` and use the returned `Binding` as the canonical token standard, token contract, and token id
 
 If any step fails, clients MUST treat the binding relationship as unverified.
 
-The `bindingContract` and `tokenContract` MAY be different addresses or the same address. Clients MUST NOT assume they are distinct.
+The `bindingContract` and `Binding.tokenContract` MAY be the same address or different addresses. Clients MUST NOT assume they are distinct.
 
 ### Example Encoding
 
-For:
-
-- `bindingContract = 0x1111111111111111111111111111111111111111`
-- `tokenStandard = 0x00`
-- `tokenContract = 0x2222222222222222222222222222222222222222`
-- `tokenId = 0x1234`
-
-the metadata payload is:
+For `bindingContract = 0x9c4e8f2a1b7d6e3c0a5f8d2b9e1c4a7f3d6e8b0c`, the metadata payload is:
 
 ```text
-0x
-1111111111111111111111111111111111111111
-00
-2222222222222222222222222222222222222222
-02
-1234
+0x9c4e8f2a1b7d6e3c0a5f8d2b9e1c4a7f3d6e8b0c
 ```
+
+Clients then call `bindingOf(agentId)` on that address to obtain `standard`, `tokenContract`, and `tokenId`.
 
 ## Rationale
 
@@ -169,13 +130,9 @@ The token contract and token id alone are not sufficient. The same token may be 
 
 In some implementations, the token contract itself defines the binding logic. In those cases, `bindingContract` and `tokenContract` are the same address.
 
-### Why include the token standard as an enum byte?
+### Why not store token standard, token contract, and token id in metadata?
 
-The token contract address and token id do not reveal whether control should be interpreted through `ownerOf`, `balanceOf`, or another standard-specific rule. A one-byte enum is compact and matches how adapter implementations typically branch between ERC-721, ERC-1155, and ERC-6909 behavior.
-
-### Why use compact token ids?
-
-Token ids are often small. Encoding them in 32 bytes wastes storage and calldata. A length-prefixed compact integer preserves unambiguous decoding while significantly reducing size for common cases.
+Duplicating those fields in the registry would risk drift if the binding contract is updated. The binding contract is the single source of truth; metadata only points clients to which contract to query.
 
 ## Backwards Compatibility
 
@@ -188,50 +145,27 @@ Existing [ERC-8004](./erc-8004.md) registries and adapters are not required to s
 
 ## Test Cases
 
-Expected encodings:
-
-ERC-721 example with token id `0`:
+Metadata payload (always 20 bytes):
 
 ```text
-bindingContract = 0x1111111111111111111111111111111111111111
-tokenStandard   = 0x00  // ERC-721
-tokenContract   = 0x2222222222222222222222222222222222222222
-tokenId         = 0
+bindingContract = 0x9c4e8f2a1b7d6e3c0a5f8d2b9e1c4a7f3d6e8b0c
 
-=> 0x111111111111111111111111111111111111111100222222222222222222222222222222222222222200
+=> 0x9c4e8f2a1b7d6e3c0a5f8d2b9e1c4a7f3d6e8b0c
 ```
 
-ERC-1155 example with token id `5`:
-
-```text
-bindingContract = 0x1111111111111111111111111111111111111111
-tokenStandard   = 0x01  // ERC-1155
-tokenContract   = 0x2222222222222222222222222222222222222222
-tokenId         = 5
-
-=> 0x11111111111111111111111111111111111111110122222222222222222222222222222222222222220105
-```
-
-ERC-721 example with token id `0x1234`:
-
-```text
-bindingContract = 0x1111111111111111111111111111111111111111
-tokenStandard   = 0x00  // ERC-721
-tokenContract   = 0x2222222222222222222222222222222222222222
-tokenId         = 0x1234
-
-=> 0x1111111111111111111111111111111111111111002222222222222222222222222222222222222222021234
-```
+For the same `bindingContract`, `bindingOf(agentId)` might return for example ERC-721 with `tokenId = 0`, ERC-1155 with `tokenId = 5`, or ERC-721 with `tokenId = 0x1234`; those values live only in the `Binding` struct from the binding contract, not in `agent-binding` metadata.
 
 ## Security Considerations
 
-Clients MUST NOT assume that decoding `agent-binding` alone is sufficient to determine the current controller of an agent. The metadata reveals the binding contract and the bound token, but control semantics remain implementation-specific and may depend on current ownership, balances, thresholds, delegated permissions, or additional contract logic.
+Clients MUST NOT assume that decoding `agent-binding` alone is sufficient to determine the current controller of an agent. The metadata reveals only which binding contract to use; the bound token and control semantics come from `bindingOf` and remain implementation-specific.
+
+The trust for this system lies in the contract code of the binding contract. The result of the `bindingOf` function is only as secure and verifiable as the security of the binding contract itself. Clients SHOULD assess that contract (for example audits, reputation, and upgrade risk) before relying on its return values.
 
 Clients MUST:
 
-1. decode the binding metadata
+1. decode the binding metadata (20-byte `bindingContract` address)
 2. inspect or query the referenced `bindingContract`
-3. verify the canonical binding with `bindingOf(agentId)`
+3. read the canonical binding with `bindingOf(agentId)`
 
 Implementations MUST reserve the `agent-binding` metadata key so that untrusted callers cannot overwrite or forge the canonical record after registration.
 
