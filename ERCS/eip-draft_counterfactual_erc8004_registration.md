@@ -8,32 +8,32 @@ status: Draft
 type: Standards Track
 category: ERC
 created: 2026-05-20
-requires: 8004, 721
+requires: 712, 721, 1271, 8004
 ---
 
 ## Abstract
 
-Counterfactual ERC-8004 registration lets NFT tokens become an onchain agent at dramatically reduced gas cost using verifiable onchain events.
+Registering AI agents onchain allows them to be discovered without taking on counterparty risk, such as being censored or deleted.
 
-Every counterfactual registration is keyed by a deterministic `registrationHash` derived from the chain, the emitting adapter, the declared token standard, and the external token coordinates. Indexers and clients resolve state by applying the latest event for a given `registrationHash`. A counterfactual identity MAY later be promoted to a canonical ERC-8004 registration through a registry mint that links back to the same `registrationHash`.
+[ERC-8004](./eip-8004.md) is an AI agent registry that provides onchain registration. However, it has a number of limitations that this ERC fixes. With ERC-8004 each registration mints an [ERC-721](./eip-721.md) identity token, which is expensive to do for every agent. Also the agent identifier does not include the chain it was created on, so it is not unique across chains.
+
+This ERC defines counterfactual ERC-8004 registration, which records an agent onchain without minting a token. It also creates a globally unique agent identifier derived deterministically from the registration data.
 
 ## Motivation
 
-ERC-8004 gives agents an onchain identity-registry token. Some agents are already anchored by external NFTs, semi-fungible tokens, or other tokenized rights. Requiring those agents to mint a second identity-registry token before they can be discovered adds cost and coordination.
+Counterfactual ERC-8004 registation provides many of the benefits of ERC-8004 registartion with a mucy lower cost. Insated of minting a new token, Counterfactual registration uses an existing NFT as the root of the identity, and ownership record. For existing NFT collections, this dramatically reduces the costs for agent registation. 
 
-Counterfactual registration lets a token controller make an onchain ERC-8004 identity claim without minting an ERC-8004 identity-registry token. The claim is published as an onchain event, can be indexed and updated, and can later be promoted to a canonical ERC-8004 registration through a separate adapter flow. Write authority is tied to current control of the external token.
-
-Versioned events let indexers decode this ERC's payloads under future revisions that add or reorder fields.
+Instead of using onchain storage, for counterfactual registartion the claim is published as an onchain event that can be indexed and even updated if necessary. Later a conterfactual registration can be promoted to a onchain ERC-8004 registration if necessary. 
 
 ## Specification
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119) and [RFC 8174](https://www.rfc-editor.org/rfc/rfc8174).
 
-This ERC defines counterfactual registration via event emission. Future ERCs MAY define alternative counterfactual emission mechanisms, for example registration carried in transaction calldata, that preserve the same authorization, hashing, latest-write-wins, and no-registry-storage-write properties.
+This ERC defines counterfactual ERC-8004 registration via event emission. The reason that it is called coungerfactual, is becuase all the inputs are the same for registration, and therefore the inputs `could` but instead of registering the inputs onchain, we hash the inputs and emit the event.
 
 ### Interface
 
-Compliant adapters MUST implement the following interface:
+Counter factual registartion is a unitque interface of ERC-8217, which is a singleton adapter contract for ERC-8004, allowing for the additional functionality. ERC-8217 adapter contacts MUST implement the following interface:
 
 ```solidity
 pragma solidity ^0.8.24;
@@ -42,7 +42,9 @@ interface IERC8004CounterfactualRegistration {
     enum TokenStandard {
         ERC721,
         ERC1155,
-        ERC6909
+        ERC6909, 
+        ERC1155F, 
+        ERC6909F
     }
 
     struct MetadataEntry {
@@ -52,7 +54,6 @@ interface IERC8004CounterfactualRegistration {
 
     /// @notice Computes the canonical counterfactual registration hash.
     function registrationHash(
-        TokenStandard standard,
         address tokenContract,
         uint256 tokenId
     ) external view returns (bytes32);
@@ -72,6 +73,23 @@ interface IERC8004CounterfactualRegistration {
         address tokenContract,
         uint256 tokenId,
         string calldata agentURI
+    ) external returns (bytes32 computedHash);
+
+    /// @notice Signature-authorized counterfactual registration. The token owner signs an EIP-712
+    /// payload and ANY caller may submit it, so a registration can be bundled into a transaction the
+    /// owner does not send (for example, a mint that registers the agent at mint time). Emits
+    /// CounterfactualAgentRegistered (and CounterfactualAgentWalletSet when agentWallet != address(0))
+    /// with emitter = owner.
+    function counterfactualRegisterWithSig(
+        TokenStandard standard,
+        address tokenContract,
+        uint256 tokenId,
+        string calldata agentURI,
+        MetadataEntry[] calldata metadata,
+        address agentWallet,
+        address owner,
+        uint256 expiration,
+        bytes calldata signature
     ) external returns (bytes32 computedHash);
 
     /// @notice Counterfactual agent URI update (emits event, no registry write, no SSTORE).
@@ -187,12 +205,12 @@ Every counterfactual event defined in this ERC MUST emit `version == 1`. Impleme
 For every counterfactual function, the adapter MUST compute:
 
 ```solidity
-registrationHash = keccak256(abi.encode(block.chainid, address(this), standard, tokenContract, tokenId));
+registrationHash = keccak256(abi.encode(block.chainid, address(this), tokenContract, tokenId));
 ```
 
-`address(this)` is the emitting adapter address. The hash binds a counterfactual identity to one chain, one adapter, one declared token standard, and one external token. Including `standard` produces a distinct identity per declared standard for a single `(tokenContract, tokenId)` pair, which separates counterfactual claims when a contract serves more than one token standard.
+`address(this)` is the emitting adapter address. The hash binds a counterfactual identity to one chain, one adapter, and one external token. The token standard is deliberately excluded from the hash, so a token has one identity regardless of which token interface it is registered through, and the identity is stable across payload-schema revisions. The standard is still supplied to each counterfactual function, validated at call time by the control check (see Authorization), and carried in every counterfactual event. A contract that serves the same `(tokenContract, tokenId)` under more than one token standard therefore resolves to a single identity.
 
-`registrationHash(TokenStandard standard, address tokenContract, uint256 tokenId)` MUST be deterministic and MUST NOT depend on mutable contract storage. Apart from `block.chainid` and `address(this)`, it MUST use only its function arguments.
+`registrationHash(address tokenContract, uint256 tokenId)` MUST be deterministic and MUST NOT depend on mutable contract storage. Apart from `block.chainid` and `address(this)`, it MUST use only its function arguments.
 
 ### Event consumption
 
@@ -212,11 +230,47 @@ Control means one of the following:
 
 If `tokenContract == address(0)`, the call MUST revert. If the caller satisfies neither control rule, the call MUST revert.
 
+### Signature-authorized registration
+
+`counterfactualRegisterWithSig` separates the caller from the authorizer, so a registration can be folded into a transaction the token owner does not send, such as a mint function that registers the agent at mint time. The token `owner` signs the payload and any caller MAY submit it.
+
+Authorization on this path is by signature, not by `msg.sender`. The adapter MUST verify the signature and MUST verify that `owner` is the current direct owner of the token (rule 1 in Authorization). Delegated control (rule 2) MUST NOT be accepted on the signed path.
+
+The signed payload MUST be an [EIP-712](./eip-712.md) typed message. The domain is:
+
+```solidity
+EIP712Domain(string name, string version, uint256 chainId, address verifyingContract)
+```
+
+where `chainId` is `block.chainid` and `verifyingContract` is the adapter address. The message type is:
+
+```solidity
+CounterfactualRegister(
+    uint8 standard,
+    address tokenContract,
+    uint256 tokenId,
+    string agentURI,
+    MetadataEntry[] metadata,
+    address agentWallet,
+    address owner,
+    uint256 expiration
+)
+MetadataEntry(string metadataKey, bytes metadataValue)
+```
+
+The message is hashed per the EIP-712 rules for these types. Together, `chainId` and `verifyingContract` in the domain and `tokenContract` and `tokenId` in the message bind the signature to one chain, one adapter, and one token, so it cannot be replayed across chains, adapters, or tokens. The adapter MUST accept both EOA signatures and [ERC-1271](./eip-1271.md) contract signatures over the derived digest.
+
+The signature is bounded by time rather than by a nonce. The adapter MUST reject the call if `expiration` is more than an implementation-defined maximum delay past the current block timestamp, and MUST reject the call if the current block timestamp is past `expiration`. This bounds the window in which a superseded-but-unexpired signature can be replayed; latest-event-wins (see Event consumption) resolves ordering.
+
+`agentWallet` is optional. When it is non-zero, the adapter MUST emit `CounterfactualAgentWalletSet` for the same `registrationHash` in the same call, binding the wallet in the same transaction as the registration.
+
 ### Function behavior
 
-`registrationHash(standard, tokenContract, tokenId)` MUST return the hash defined in Registration hash.
+`registrationHash(tokenContract, tokenId)` MUST return the hash defined in Registration hash.
 
 `counterfactualRegister(standard, tokenContract, tokenId, agentURI, metadata)` MUST verify caller control. It MUST reject reserved metadata keys as described in Reserved metadata keys. It MUST compute `registrationHash`, emit `CounterfactualAgentRegistered`, and return the computed hash. The overload without `metadata` MUST behave as if an empty metadata array had been supplied.
+
+`counterfactualRegisterWithSig(standard, tokenContract, tokenId, agentURI, metadata, agentWallet, owner, expiration, signature)` MUST verify the signature and `expiration` as described in Signature-authorized registration, and MUST verify that `owner` is the current direct owner of the token. It MUST reject reserved metadata keys as described in Reserved metadata keys. It MUST compute `registrationHash`, emit `CounterfactualAgentRegistered` with `emitter = owner`, emit `CounterfactualAgentWalletSet` with `emitter = owner` when `agentWallet != address(0)`, and return the computed hash.
 
 An implementation MAY declare the metadata-bearing overload as `public` and MAY use `memory` rather than `calldata` for internal-call ergonomics, provided the external ABI is equivalent.
 
@@ -279,7 +333,7 @@ Reference test coverage for an implementation of this ERC is available in the Ad
 
 Implementations should include tests covering at least:
 
-1. `registrationHash(standard, tokenContract, tokenId)` returns `keccak256(abi.encode(block.chainid, adapter, standard, tokenContract, tokenId))`.
+1. `registrationHash(tokenContract, tokenId)` returns `keccak256(abi.encode(block.chainid, adapter, tokenContract, tokenId))`, and is identical for the same token regardless of the `standard` supplied to the counterfactual functions.
 2. Each successful counterfactual function emits exactly one version `1` event.
 3. Calls revert when `tokenContract == address(0)`, the token standard is unsupported, or the caller does not control the external token.
 4. Single and batch metadata writes revert for the reserved binding metadata key.
