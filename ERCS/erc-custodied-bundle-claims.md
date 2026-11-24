@@ -11,15 +11,13 @@ requires: 20, 165, 721, 1155, 6551
 
 ## Abstract
 
-When an NFT controls an [ERC-6551](./erc-6551.md) account, the seller can front run the sale by withdrawing assets just before it settles. ERC-20 approvals can also let the seller withdraw tokens after the sale.
-
-Bundling places the controlling NFT and its assets in escrow. A bundle NFT, sold in place of the controlling NFT, represents the claim to both. On redemption, the buyer receives the controlling NFT and the assets move to a fresh account bound to it, where prior approvals do not apply. The seller can reclaim an unsold bundle after its deadline.
+This standard bundles an NFT and the assets in its [ERC-6551](./erc-6551.md) account into a bundle NFT that can be bought and sold atomically. Without it, the seller can withdraw assets from the account before the sale settles, and an approved spender can withdraw them after it. The escrow takes custody of the NFT and the assets before the bundle NFT is listed. On redemption, the buyer receives the NFT and the assets move to a fresh account bound to it, where prior approvals do not apply. The seller can reclaim an unsold bundle after its deadline.
 
 ## Motivation
 
-An NFT can derive much of its sale price from what its ERC-6551 account holds. A game character may carry scarce equipment, and an AI agent may use its account to trade and to pay other agents for services. When the owner sells the agent, the buyer expects to receive every asset in the account.
+An agent NFT represents the identity of an AI agent. The agent has payment addresses where it receives funds on particular chains, and its NFT controls an ERC-6551 account that holds the funds it uses to trade and to pay other agents. A buyer's price can reflect both the agent's identity and the funds in its account. Even if the buyer checks the balance before purchase, the seller can withdraw funds before the sale settles. A spender with an outstanding approval can withdraw funds after the buyer takes control.
 
-An accurate listing still leaves the buyer exposed. The seller can withdraw assets between the time the buyer checks the balance and the time the sale settles. After settlement, a spender approved before the sale can still drain the account. Projects need a way for the owner to commit the assets included in the price and for the buyer to receive them under the NFT's control, clear of those approvals.
+The same problem arises whenever assets held in an account contribute to the price of its controlling NFT, as with a game character and its equipment. Putting the agreed assets in escrow gives the buyer an inventory to inspect before purchase, and delivery to a fresh account puts those assets under the NFT's control with no approvals carried over from the old account.
 
 ## Specification
 
