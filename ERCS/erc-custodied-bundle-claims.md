@@ -11,9 +11,9 @@ requires: 20, 165, 721, 1155, 6551
 
 ## Abstract
 
-[ERC-6551](./erc-6551.md) allows NFTs to own an account. There is a problem, however, and it is twofold. The first is front running, where the seller can remove the assets from the account just before the sale. The second is permissions, where approvals set on the account's assets, ERC-20s for example, let the previous owner withdraw tokens even after the sale.
+When an NFT controls an [ERC-6551](./erc-6551.md) account, the seller can front run the sale by withdrawing assets just before it settles. ERC-20 approvals can also let the seller withdraw tokens after the sale.
 
-Using bundling, the controlling NFT and the assets in its ERC-6551 account are turned into a bundle with a bundle NFT. The bundle NFT can then be sold, and the assets are redeemed through the protocol. On redemption the NFT goes to the buyer and the assets to a fresh account bound to it. The seller can reclaim an unsold bundle after its deadline.
+Bundling places the controlling NFT and its assets in escrow. A bundle NFT, sold in place of the controlling NFT, represents the claim to both. On redemption, the buyer receives the controlling NFT and the assets move to a fresh account bound to it, where prior approvals do not apply. The seller can reclaim an unsold bundle after its deadline.
 
 ## Motivation
 
