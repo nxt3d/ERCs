@@ -19,7 +19,7 @@ An agent NFT represents the identity of an AI agent. The NFT controls an ERC-655
 
 The solution is for the owner to take the agreed assets out of the ERC-6551 account, bundle them with the NFT in a permissionless escrow, and sell the bundle NFT the escrow issues.
 
-Any owner whose collection and assets meet the published admission policy can deposit without individual approval from an operator. On redemption, the assets move to a fresh account bound to the original NFT, where approvals from the old account do not apply.
+Eligible NFTs and the assets in their ERC-6551 accounts can be deposited without approval from an operator. On redemption, the assets move to a fresh account bound to the original NFT, where approvals from the old account do not apply.
 
 ## Specification
 
