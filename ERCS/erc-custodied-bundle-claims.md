@@ -13,7 +13,7 @@ requires: 20, 165, 721, 1155, 6551
 
 A seller can front-run the sale of an NFT by withdrawing assets from its ERC-6551 account before settlement. A spender approved by that account can remove assets even after the parent NFT changes hands. A buyer therefore cannot rely on the listed balance.
 
-This proposal defines a redeem-only claim on a controlling NFT and an inventory placed in custody before sale. One escrow serves each deployment on a supported chain. Owners of eligible assets can deposit without individual operator approval, and the sale can honor the controlling NFT's creator royalty. The inventory can include assets from the seller's wallet. On redemption the NFT goes to the buyer and the inventory is due to a fresh account bound to it. If the bundle remains unsold, the seller can initiate reclaim at or after the custody deadline.
+This proposal defines a redeem-only claim on a controlling NFT and an inventory placed in custody before sale. One escrow serves each deployment on a supported chain. Owners of eligible assets can deposit without individual operator approval, and the sale can honor the controlling NFT's creator royalty. The inventory covers eligible assets intended for the NFT to control. They can already be in its ERC-6551 account or come directly from the seller's wallet without ever having entered that account. On redemption the NFT goes to the buyer and the inventory is due to a fresh account bound to it. If the bundle remains unsold, the seller can initiate reclaim at or after the custody deadline.
 
 ## Motivation
 
@@ -62,7 +62,7 @@ interface IBundleEscrow {
 }
 ```
 
-A deposit MUST take custody of the controlling ERC-721 and every manifest entry before making the claim available. The manifest MUST remain readable and immutable after deposit. It contains zero to 32 entries ordered strictly by numeric (kind, token address, token ID). Kinds 0, 1 and 2 denote [ERC-20](./erc-20.md), ERC-721 and [ERC-1155](./erc-1155.md) respectively. Amounts MUST be positive. ERC-20 entries MUST use ID zero and ERC-721 entries MUST use amount one. A manifest MUST exclude the controlling token and MUST NOT assign two kinds to the same token contract.
+A deposit MUST take custody of the controlling ERC-721 and every manifest entry before making the claim available. Eligibility does not depend on prior custody by an account bound to the NFT. The source account itself stays at its address. The manifest MUST remain readable and immutable after deposit. It contains zero to 32 entries ordered strictly by numeric (kind, token address, token ID). Kinds 0, 1 and 2 denote [ERC-20](./erc-20.md), ERC-721 and [ERC-1155](./erc-1155.md) respectively. Amounts MUST be positive. ERC-20 entries MUST use ID zero and ERC-721 entries MUST use amount one. A manifest MUST exclude the controlling token and MUST NOT assign two kinds to the same token contract.
 
 The commitment MUST be computed as follows using the standard Solidity ABI encoding and the entry tuple defined above. It commits to the original inventory. Delivery progress is recorded separately. Bundle identity also includes the bundle ID because repeated deposits can have the same hash.
 
@@ -132,7 +132,7 @@ NewTrade on Base (chain ID 8453) illustrates the custody and release semantics. 
 | Claim collection | 0x59900b207ea703B0bBcF8fD84C5E11dE46826185 |
 | Custody vault | 0xe3a95e47B8ECC9F8E42a7BDE58dde2FBCbc69C53 |
 
-The seller supplies the controlling NFT in both Base deposit paths. In deposit, all entries come from the seller. In `depositFromAccount`, all entries come from one executable account reporting the matching chain, collection and ID. This path requires enabled migration and an unused seller nonce. The original account stays at its address. The escrow snapshots the controlling NFT's creator royalty on listing and the wrapper itself quotes zero. The escrow emits `BundleRedeemed` or `BundleReclaimed` at exit initiation even when entries remain held.
+The seller supplies the controlling NFT in both Base deposit paths. In `deposit`, the vault pulls every entry directly from the seller using token approvals. In `depositFromAccount`, all entries come from one executable account reporting the matching chain, collection and ID. This path requires enabled migration and an unused seller nonce. Each call selects one source for the entire manifest. A single deposit cannot combine wallet and account balances. Both paths lead to the same fresh-account redemption. The escrow snapshots the controlling NFT's creator royalty on listing and the wrapper itself quotes zero. The escrow emits `BundleRedeemed` or `BundleReclaimed` at exit initiation even when entries remain held.
 
 ## Security Considerations
 
