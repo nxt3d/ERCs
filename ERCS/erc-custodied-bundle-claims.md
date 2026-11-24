@@ -15,7 +15,7 @@ This standard bundles an NFT and the assets in its [ERC-6551](./erc-6551.md) acc
 
 ## Motivation
 
-An agent NFT represents the identity of an AI agent. Its NFT controls an ERC-6551 account that can hold trading funds. A buyer who values both the identity and the funds can verify the balance and still receive an empty account. The seller can withdraw the funds before the sale settles, and a spender with an existing approval can withdraw them even after the NFT changes hands. The same risk arises whenever assets in an account contribute to the price of the NFT that controls it.
+An agent NFT represents the identity of an AI agent. The NFT controls an ERC-6551 account that can hold trading funds. A buyer who values both the identity and the funds can verify the balance and still receive an empty account. The seller can withdraw the funds before the sale settles, and a spender with an existing approval can withdraw them even after the NFT changes hands. The same risk arises whenever assets in an account contribute to the price of the NFT that controls it.
 
 The owner takes the agreed assets out of the ERC-6551 account, bundles them with the NFT in a permissionless escrow, and sells the bundle NFT the escrow issues.
 
