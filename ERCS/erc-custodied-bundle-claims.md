@@ -11,11 +11,15 @@ requires: 20, 165, 721, 1155, 6551
 
 ## Abstract
 
-A seller can withdraw assets from an NFT's token-bound account before the sale settles. Existing spending approvals can also let a third party withdraw assets after the buyer receives the NFT. This proposal defines a claim over a controlling NFT and selected assets placed in escrow before sale. Assets may originate in the seller's wallet or in the NFT's account. The buyer redeems the claim for the NFT and delivery of its manifest to a fresh account bound to that NFT. The seller can reclaim an unsold bundle at the custody deadline. Wallets can identify the claim and track outstanding deliveries even after it burns.
+A seller can front-run the sale of an NFT by withdrawing assets from its ERC-6551 account before settlement. A spender approved by that account can remove assets even after the parent NFT changes hands. A buyer therefore cannot rely on the listed balance.
+
+This proposal defines a redeem-only claim on a controlling NFT and an inventory placed in custody before sale. One escrow serves each deployment on a supported chain. Owners of eligible assets can deposit without individual operator approval, and the sale can honor the controlling NFT's creator royalty. The inventory can include assets from the seller's wallet. On redemption the NFT goes to the buyer and the inventory is due to a fresh account bound to it. If the bundle remains unsold, the seller can initiate reclaim at or after the custody deadline.
 
 ## Motivation
 
-A marketplace showing the current balance of an NFT's account cannot promise that balance to a buyer. The same problem arises when a seller wants to include tokens still held in a separate wallet. An escrow can take custody of the agreed inventory and offer a single claim. A common read interface lets a wallet show what the claim covers, who can exercise it, and which deliveries are still pending. An escrow can admit participants under public asset policies and support creator royalties on the primary sale.
+A marketplace can show an accurate account balance when a buyer places an order and still deliver an NFT with an empty account. Transferring the parent changes who controls the account, but an asset contract can continue to recognize spending approvals granted by the old account.
+
+Taking custody before listing gives the buyer a specific inventory to verify. Delivering that inventory to a fresh account puts it under the redeemed NFT's control even if the seller originally held the assets in a separate wallet. A shared escrow address lets wallets and indexers find claims under the same published admission and governance policies. A seller can offer a bundle with a creator royalty and recover an unsold bundle when custody expires. Both parties can track any delivery that remains pending after exit.
 
 ## Specification
 
