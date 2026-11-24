@@ -11,9 +11,9 @@ requires: 20, 165, 721, 1155, 6551
 
 ## Abstract
 
-[ERC-6551](./erc-6551.md) allows NFTs to own an account. There is a problem, however. Using front running, the seller of an NFT and its account can remove the assets from the account just before the sale. A spender approved by that account can remove assets even after the parent NFT changes hands. A buyer therefore cannot rely on the listed balance.
+[ERC-6551](./erc-6551.md) allows NFTs to own an account. There is a problem, however, and it is twofold. The first is front running, where the seller can remove the assets from the account just before the sale. The second is permissions, where approvals set on the account's assets, ERC-20s for example, let the previous owner withdraw tokens even after the sale.
 
-This proposal defines a redeem-only claim on a controlling NFT and an inventory placed in custody before sale. One escrow serves each deployment on a supported chain. Owners of eligible assets can deposit without individual operator approval, and the sale can honor the controlling NFT's creator royalty. The inventory covers eligible assets intended for the NFT to control. They can already be in its ERC-6551 account or come directly from the seller's wallet without ever having entered that account. On redemption the NFT goes to the buyer and the inventory is due to a fresh account bound to it. If the bundle remains unsold, the seller can initiate reclaim at or after the custody deadline.
+Using bundling, the controlling NFT and the assets in its ERC-6551 account are turned into a bundle with a bundle NFT. The bundle NFT can then be sold, and the assets are redeemed through the protocol. On redemption the NFT goes to the buyer and the assets to a fresh account bound to it. The seller can reclaim an unsold bundle after its deadline.
 
 ## Motivation
 
