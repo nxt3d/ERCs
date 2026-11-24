@@ -43,7 +43,7 @@ Within a deployment on a supported chain, one identified escrow MUST coordinate 
 
 ### Inventory
 
-The escrow MUST expose the following reads and exits. The receipt address returned by the escrow MUST be the collection that reports it. The vault returned by the collection is the emitter of release progress for that bundle.
+Every compliant escrow MUST implement `IBundleEscrow`. For each known bundle ID, the `escrow` address returned by the claim collection's `bundleClaim(bundleId)` MUST identify the escrow for that bundle. Calling `receipt()` on that escrow MUST return the address of the claim collection. The vault at the `vault` address returned by the same call MUST emit `ReleaseBegun`, `EntryReleased`, `EntryPending`, `ControllingNFTReleased`, `EntriesRedirected` and `BundleEmptied` as specified in [Partial release and events](#partial-release-and-events). Functions MUST revert under the failure conditions this Specification defines, and this standard does not prescribe custom error selectors.
 
 ```solidity
 struct Entry {
