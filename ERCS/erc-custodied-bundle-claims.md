@@ -25,11 +25,11 @@ Eligible NFTs and the assets in their ERC-6551 accounts can be deposited without
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in RFC 2119 and RFC 8174.
 
-Using an **escrow** contract, NFTs and their controlled assets, such as those in an ERC-6551 account, are deposited into a **bundle** for a fixed period of time. A **bundle NFT**, which represents the claim to redeem the bundle, is minted for each bundle. Each bundle receives a **bundle ID**, and its bundle NFT uses the same number as its token ID. Bundle ID and token ID can therefore be used interchangeably. The **bundle NFT collection** is the separate ERC-721 contract that mints bundle NFTs.
+An **escrow** contract holds an NFT and its controlled assets together as a **bundle** for a fixed period. The controlled assets can come from an ERC-6551 account. A **bundle NFT** is minted for each bundle. It represents the claim to redeem that bundle. Each bundle receives a **bundle ID**. Its bundle NFT uses that number as its token ID. Bundle ID and token ID can therefore be used interchangeably. The **bundle NFT collection** is the separate ERC-721 contract that mints bundle NFTs.
 
 ### Discovery
 
-The bundle NFT collection MUST implement [ERC-721](./erc-721.md). It MUST return `true` from `supportsInterface(0x68420221)`, the [ERC-165](./erc-165.md) identifier of `ICustodiedBundleClaim`. Each bundle NFT's token ID MUST equal its bundle ID. If the bundle ID exists, `bundleClaim(bundleId)` MUST return that bundle's record, including after its bundle NFT is burned. If the bundle ID does not exist, it MUST revert.
+The bundle NFT collection MUST implement [ERC-721](./erc-721.md). The [ERC-165](./erc-165.md) identifier of `ICustodiedBundleClaim` is `0x68420221`. The bundle NFT collection MUST return `true` from `supportsInterface(0x68420221)`. Each bundle NFT's token ID MUST equal its bundle ID. If the bundle ID exists, `bundleClaim(bundleId)` MUST return that bundle's record. After the bundle NFT is burned, the function MUST still return the record. If the bundle ID does not exist, it MUST revert.
 
 ```solidity
 interface ICustodiedBundleClaim {
@@ -45,7 +45,7 @@ Each deployment on a chain MUST use exactly one escrow. The `escrow` field retur
 
 ### Inventory
 
-The escrow records each bundle and its manifest, the list of assets in the bundle, and it runs the listing, sale, redemption and reclaim of the bundle. The vault is a separate contract that holds the deposited NFT and assets, and only its escrow can move them in or out. Every compliant escrow MUST implement `IBundleEscrow`. The escrow's `receipt()` MUST return the address of the bundle NFT collection.
+The manifest lists the assets in a bundle. The escrow records each bundle and its manifest. The escrow manages listing, sale, redemption and reclaim. The vault is a separate contract that holds the deposited NFT and assets. Only its escrow can move them into or out of the vault. Every compliant escrow MUST implement `IBundleEscrow`. The escrow's `receipt()` MUST return the address of the bundle NFT collection.
 
 ```solidity
 struct Entry {
@@ -64,7 +64,7 @@ interface IBundleEscrow {
 }
 ```
 
-The escrow MUST take custody of the controlling NFT and every manifest entry before it makes the bundle NFT available. The assets can come from the NFT's ERC-6551 account or directly from the seller. The source ERC-6551 account is not an escrowed asset, and redemption does not deliver assets back to it. The manifest MUST remain readable and immutable after deposit.
+The escrow MUST take custody of the controlling NFT and every manifest entry before it makes the bundle NFT available. The assets can come from the NFT's ERC-6551 account or directly from the seller. The source ERC-6551 account is not an escrowed asset. Redemption does not deliver assets back to it. After deposit, the manifest MUST remain readable. It MUST also remain immutable.
 
 Each manifest entry uses one of the following kinds.
 
@@ -79,9 +79,9 @@ A manifest MUST satisfy the following rules.
 - It MUST hold at most 32 entries.
 - It MUST NOT include the controlling NFT.
 - It MUST NOT assign two kinds to the same token contract.
-- Its entries MUST be in strictly ascending order, compared first by `kind` as a `uint8`, then by `token` as a `uint160`, then by `tokenId` as a `uint256`. Strict ordering rejects duplicate entries and makes the same assets always produce the same manifest hash.
+- Compare entries first by `kind` as a `uint8`, then by `token` as a `uint160`, then by `tokenId` as a `uint256`. The entries MUST be in strictly ascending order under this comparison. Strict ordering rejects duplicate entries. It also makes the same assets always produce the same manifest hash.
 
-The manifest hash MUST be computed as follows, where `entries` is the manifest as an `Entry[]` array. The hash records what was deposited and does not change as assets are delivered. Two deposits of the same assets produce the same hash, so a bundle is identified by its bundle ID, not by its hash.
+The variable `entries` holds the manifest as an `Entry[]` array. The manifest hash MUST be computed as follows. The hash records what was deposited. It stays the same as assets are delivered. Two deposits of the same assets produce the same hash. The bundle ID identifies the individual bundle.
 
 ```solidity
 keccak256(abi.encode(uint256(2), block.chainid, escrow, controllingNFT, controllingTokenId, entries))
@@ -100,19 +100,19 @@ keccak256(abi.encode(uint256(2), block.chainid, escrow, controllingNFT, controll
 | Redeeming | 6 | Buyer exit started and something remains in custody |
 | Reclaiming | 7 | Seller exit started and something remains in custody |
 
-A sale MUST transfer the escrow-held bundle NFT to the recipient once. Subsequent holder transfers MUST revert. Only the current owner of the issued bundle NFT MAY initiate redemption. The escrow MUST burn the bundle NFT on exit and MUST prevent a second exit. An approved operator MUST NOT be able to redeem on the owner's behalf.
+A sale MUST transfer the escrow-held bundle NFT to the recipient once. Subsequent holder transfers MUST revert. Only the current owner of the issued bundle NFT MAY initiate redemption. The escrow MUST burn the bundle NFT on exit. It MUST prevent a second exit. An approved operator MUST NOT be able to redeem on the owner's behalf.
 
-On redemption the escrow MUST create and initialize a fresh [ERC-6551](./erc-6551.md) account bound to the controlling NFT on this chain, using the holder's salt contribution. The controlling NFT is due to the redeemer and the entries are due to the new account. Before releasing entries to that account the vault MUST establish that the NFT reached the redeemer and the redeemer controls the account. The recovery exception below permits the redeemer to select another asset destination if delivery of the NFT is pending.
+The bundle NFT holder supplies `holderSalt`, a 32-byte contribution to the account salt. On redemption, the escrow MUST use this contribution to derive the account salt. The escrow MUST create a fresh [ERC-6551](./erc-6551.md) account with that salt. It MUST initialize the account. The account MUST be bound to the controlling NFT on this chain. The controlling NFT is due to the redeemer. The manifest entries are due to the new account. Before releasing entries to that account, the vault MUST establish that the NFT reached the redeemer. Before release, the vault MUST also establish that the redeemer controls the account. The recovery exception below permits the redeemer to select another asset destination if delivery of the NFT is pending.
 
 At or after the custody deadline, only the recorded seller MAY reclaim a never-issued Deposited or Listed bundle. The controlling NFT MUST return to the seller. The seller selects a nonzero destination for the entries. Protocol custody contracts MUST be rejected as destinations. The seller may select the original account. Reclaiming entries can proceed while the controlling NFT is pending.
 
 ### Partial release and events
 
-A successful exit transaction MAY leave assets in custody. Each set bit in `heldMask` MUST identify an outstanding delivery. Bits 0 through 31 correspond to manifest indices and bit 32 to the controlling NFT. Other bits MUST be zero. A completed exit MUST have a zero mask. Burning the bundle NFT alone MUST NOT mark delivery complete.
+A successful exit transaction MAY leave assets in custody. Each set bit in `heldMask` MUST identify an outstanding delivery. Bits 0 through 31 correspond to manifest indices. Bit 32 corresponds to the controlling NFT. Other bits MUST be zero. A completed exit MUST have a zero mask. Burning the bundle NFT alone MUST NOT mark delivery complete.
 
-Anyone MAY call `withdrawRemaining` with empty data to retry outstanding deliveries to the recorded destinations. The mask MUST reject bits outside the manifest and controlling NFT. Already released assets MUST NOT be delivered twice. With nonempty data encoded as abi.encode(uint8(1), destination), only the recorded NFT recipient MAY redirect outstanding manifest entries to a valid destination. During redemption this is permitted only while the controlling NFT is still held. A redirect then permits delivery of entries independently of the NFT. On reclaim the seller can redirect while entries remain. The controlling NFT destination MUST remain fixed.
+Anyone MAY call `withdrawRemaining` with empty data to retry outstanding deliveries to the recorded destinations. The mask MUST reject bits outside the manifest and controlling NFT. Already released assets MUST NOT be delivered twice. A redirect uses nonempty data encoded as `abi.encode(uint8(1), destination)`. Only the recorded NFT recipient MAY redirect outstanding manifest entries to a valid destination. During redemption this is permitted only while the controlling NFT is still held. A redirect then permits delivery of entries independently of the NFT. On reclaim the seller can redirect while entries remain. The controlling NFT destination MUST remain fixed.
 
-The vault MUST emit the following events for the corresponding actions. `ReleaseBegun` records the initial destinations, with mode 0 for redemption and 1 for reclaim. `EntryPending` reports an attempted transfer left outstanding in a successful transaction. A gated entry may remain held without an attempted transfer. `BundleEmptied` signals the last delivery. An indexer SHOULD reconcile events against the held mask at the same block.
+The vault MUST emit the following events for the corresponding actions. `ReleaseBegun` records the initial destinations. Its mode is 0 for redemption and 1 for reclaim. `EntryPending` reports an attempted transfer left outstanding in a successful transaction. A gated entry may remain held without an attempted transfer. `BundleEmptied` signals the last delivery. An indexer SHOULD reconcile events against the held mask at the same block.
 
 ```solidity
 event ReleaseBegun(uint256 indexed bundleId, uint8 mode, address extrasTo, address nftTo);
@@ -125,15 +125,15 @@ event BundleEmptied(uint256 indexed bundleId);
 
 ### Marketplace display
 
-Bundle NFT metadata SHOULD expose the chain ID, bundle ID, original NFT contract and ID, and manifest hash under properties using the keys chain_id, bundle_id, original_nft_contract, original_nft_token_id and manifest_hash. IDs SHOULD be decimal strings and the hash a 0x-prefixed 32-byte hex string. A marketplace SHOULD read the manifest at the escrow and verify its commitment before showing the assets. It SHOULD distinguish the original inventory from assets still held and label an issued bundle NFT as redeem only.
+Bundle NFT metadata SHOULD expose the following fields under `properties`. The key for the chain ID is `chain_id`. The key for the bundle ID is `bundle_id`. The keys for the original NFT contract and token ID are `original_nft_contract` and `original_nft_token_id`, respectively. The key for the manifest hash is `manifest_hash`. IDs SHOULD be decimal strings. The hash SHOULD be a 0x-prefixed 32-byte hex string. Before showing the assets, a marketplace SHOULD read the manifest at the escrow. It SHOULD verify the manifest commitment before showing the assets. It SHOULD distinguish the original inventory from assets still held. It SHOULD label an issued bundle NFT as redeem only.
 
 ## Rationale
 
-Marketplaces can display the bundle NFT using ERC-721. Calling `bundleClaim` on the bundle NFT collection supplies the escrow address and everything needed to verify the manifest or explain a pending exit. A chain-scoped hash prevents accidental reuse across escrows. Fixed manifest indices let indexers follow each delivery separately. A fresh account separates the received assets from spending permissions granted by the old account. Marketplace order formats, fee schedules and royalty routing can evolve independently.
+Marketplaces can display the bundle NFT using ERC-721. Calling `bundleClaim` on the bundle NFT collection supplies the escrow address. The returned record provides the information needed to verify the manifest. It also provides the information needed to explain a pending exit. A chain-scoped hash prevents accidental reuse across escrows. Fixed manifest indices let indexers follow each delivery separately. A fresh account separates the received assets from spending permissions granted by the old account. Marketplace order formats, fee schedules and royalty routing can evolve independently.
 
 ## Backwards Compatibility
 
-Existing ERC-721 clients can display the bundle NFT. A client that assumes unrestricted secondary transfer will encounter a revert after issuance. The NewTrade bundle NFT collection on Base predates the discovery interface. Its metadata identifies the schema newtrade.bundle.v2. For that known deployment, read `controller()` on the bundle NFT collection, cross-check receipt() on the escrow, read `getBundle(id)` and `getManifest(id)` on the escrow, and read `bundleStatus(id)` on its vault for the release record and held mask. These reads remain useful after `tokenURI` and `ownerOf` cease to resolve a burned bundle NFT. The escrow's `receiptMetadata` callback is restricted to the bundle NFT collection.
+Existing ERC-721 clients can display the bundle NFT. A client that assumes unrestricted secondary transfer will encounter a revert after issuance. The NewTrade bundle NFT collection on Base predates the discovery interface. Its metadata identifies the schema newtrade.bundle.v2. For that deployment, read `controller()` on the bundle NFT collection to find the escrow. Check that `receipt()` on the escrow returns the bundle NFT collection. Read `getBundle(id)` and `getManifest(id)` on the escrow. Read `bundleStatus(id)` on its vault for the release record and held mask. These reads remain useful after `tokenURI` and `ownerOf` cease to resolve a burned bundle NFT. The escrow's `receiptMetadata` callback is restricted to the bundle NFT collection.
 
 ## Test Cases
 
@@ -153,9 +153,9 @@ The seller supplies the controlling NFT in both Base deposit paths. In `deposit`
 
 ## Security Considerations
 
-A collection can advertise any interface identifier and serve arbitrary metadata. Clients need an independent basis for trusting a deployment and the behavior of its admitted tokens. The commitment covers selected entries and quantities. Unlisted balances, future transfers and asset value fall outside it. A token can refuse delivery indefinitely. Wallets should show the pending destination and held mask, including after the bundle NFT is burned. Redirecting assets changes where recovery delivers them and deserves explicit confirmation by the beneficiary.
+A collection can advertise any interface identifier. It can also serve arbitrary metadata. Clients need an independent basis for trusting a deployment and the behavior of its admitted tokens. The commitment covers selected entries and quantities. Unlisted balances, future transfers and asset value fall outside it. A token can refuse delivery indefinitely. Wallets should show the pending destination and held mask. They should continue to show both after the bundle NFT is burned. Redirecting assets changes where recovery delivers them. The beneficiary should explicitly confirm the redirect.
 
-The Base escrow is a UUPS proxy. Administrators control fee and admission policy, and upgrade authorities can replace code governing existing custody. An interface check gives no assurance about those authorities. A controlling-collection allowlist can narrow admission to reviewed tokens. Each deployment has its own policy and trust assumptions.
+The Base escrow is a UUPS proxy. Administrators control fee and admission policy. Upgrade authorities can replace code governing existing custody. An interface check gives no assurance about those authorities. A controlling-collection allowlist can narrow admission to reviewed tokens. Each deployment has its own policy and trust assumptions.
 
 ## Copyright
 
