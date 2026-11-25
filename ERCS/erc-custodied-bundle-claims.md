@@ -64,7 +64,7 @@ interface IBundleEscrow {
 }
 ```
 
-The escrow MUST take custody of the controlling NFT and every manifest entry before it makes the bundle NFT available. Eligibility does not depend on prior custody by an account bound to the NFT. The source ERC-6551 account is not an escrowed asset, and redemption does not deliver assets back to it. The manifest MUST remain readable and immutable after deposit.
+The escrow MUST take custody of the controlling NFT and every manifest entry before it makes the bundle NFT available. The assets can come from the NFT's ERC-6551 account or directly from the seller. The source ERC-6551 account is not an escrowed asset, and redemption does not deliver assets back to it. The manifest MUST remain readable and immutable after deposit.
 
 Each manifest entry uses one of the following kinds.
 
