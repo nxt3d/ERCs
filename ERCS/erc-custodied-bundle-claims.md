@@ -25,11 +25,11 @@ Eligible NFTs and the assets in their ERC-6551 accounts can be deposited without
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in RFC 2119 and RFC 8174.
 
-A **bundle NFT** is the ERC-721 token that represents the claim to redeem a deposited bundle. The **bundle NFT collection** is the ERC-721 contract that issues these tokens. A **bundle ID** identifies one deposit in the escrow's records.
+A **bundle NFT** is the ERC-721 token that represents the claim to redeem a deposited bundle. The **bundle NFT collection** is the ERC-721 contract that issues these tokens. A **bundle ID** is the number the escrow assigns to one deposit. The bundle NFT for that deposit has the same number as its token ID, so this standard uses bundle ID and token ID interchangeably.
 
 ### Discovery
 
-The bundle NFT collection MUST implement [ERC-721](./erc-721.md). It MUST return `true` from `supportsInterface(0x68420221)`, the [ERC-165](./erc-165.md) identifier of `ICustodiedBundleClaim`. Each bundle NFT's token ID MUST equal its bundle ID. A client can therefore pass the token ID straight to `bundleClaim`. `bundleClaim(bundleId)` MUST return the record for every known bundle ID, even after the bundle NFT burns. It MUST revert for an unknown bundle ID.
+The bundle NFT collection MUST implement [ERC-721](./erc-721.md). It MUST return `true` from `supportsInterface(0x68420221)`, the [ERC-165](./erc-165.md) identifier of `ICustodiedBundleClaim`. Each bundle NFT's token ID MUST equal its bundle ID. `bundleClaim(bundleId)` MUST return the record for every known bundle ID, even after the bundle NFT burns. It MUST revert for an unknown bundle ID.
 
 ```solidity
 interface ICustodiedBundleClaim {
