@@ -29,7 +29,7 @@ Using an **escrow** contract, NFTs and their controlled assets, such as those in
 
 ### Discovery
 
-The bundle NFT collection MUST implement [ERC-721](./erc-721.md). It MUST return `true` from `supportsInterface(0x68420221)`, the [ERC-165](./erc-165.md) identifier of `ICustodiedBundleClaim`. Each bundle NFT's token ID MUST equal its bundle ID. If the bundle ID exists, `bundleClaim(bundleId)` MUST return that bundle's record, including after its bundle NFT burns. If the bundle ID does not exist, it MUST revert.
+The bundle NFT collection MUST implement [ERC-721](./erc-721.md). It MUST return `true` from `supportsInterface(0x68420221)`, the [ERC-165](./erc-165.md) identifier of `ICustodiedBundleClaim`. Each bundle NFT's token ID MUST equal its bundle ID. If the bundle ID exists, `bundleClaim(bundleId)` MUST return that bundle's record, including after its bundle NFT is burned. If the bundle ID does not exist, it MUST revert.
 
 ```solidity
 interface ICustodiedBundleClaim {
