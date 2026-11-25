@@ -81,7 +81,7 @@ A manifest MUST satisfy the following rules.
 - It MUST NOT assign two kinds to the same token contract.
 - Its entries MUST be in strictly ascending order, compared first by `kind` as a `uint8`, then by `token` as a `uint160`, then by `tokenId` as a `uint256`. Strict ordering rejects duplicate entries and makes the same assets always produce the same manifest hash.
 
-The commitment MUST be computed as follows using the standard Solidity ABI encoding and the entry tuple defined above. It commits to the original inventory. Delivery progress is recorded separately. Bundle identity also includes the bundle ID because repeated deposits can have the same hash.
+The manifest hash MUST be computed as follows, where `entries` is the manifest as an `Entry[]` array. The hash records what was deposited and does not change as assets are delivered. Two deposits of the same assets produce the same hash, so a bundle is identified by its bundle ID, not by its hash.
 
 ```solidity
 keccak256(abi.encode(uint256(2), block.chainid, escrow, controllingNFT, controllingTokenId, entries))
