@@ -45,7 +45,7 @@ Each deployment on a chain MUST use exactly one escrow. The `escrow` field retur
 
 ### Inventory
 
-Every compliant escrow MUST implement `IBundleEscrow`. The escrow's `receipt()` MUST return the address of the bundle NFT collection. The vault that `bundleClaim(bundleId)` identifies in `vault` MUST emit `ReleaseBegun`, `EntryReleased`, `EntryPending`, `ControllingNFTReleased`, `EntriesRedirected` and `BundleEmptied` as specified in [Partial release and events](#partial-release-and-events). Functions MUST revert under the failure conditions this Specification defines, and this standard does not prescribe custom error selectors.
+The escrow records each bundle and its manifest, and it runs the listing, sale, redemption and reclaim of the bundle. The vault is a separate contract that holds the deposited NFT and assets, and only its escrow can move them in or out. Every compliant escrow MUST implement `IBundleEscrow`. The escrow's `receipt()` MUST return the address of the bundle NFT collection. The vault that `bundleClaim(bundleId)` identifies in `vault` MUST emit `ReleaseBegun`, `EntryReleased`, `EntryPending`, `ControllingNFTReleased`, `EntriesRedirected` and `BundleEmptied` as specified in [Partial release and events](#partial-release-and-events). Functions MUST revert under the failure conditions this Specification defines, and this standard does not prescribe custom error selectors.
 
 ```solidity
 struct Entry {
