@@ -76,7 +76,7 @@ Each manifest entry uses one of the following kinds.
 
 A manifest MUST satisfy the following rules.
 
-- It holds at most 32 entries. The controlling NFT is not an entry.
+- It MUST hold at most 32 entries.
 - It MUST NOT include the controlling NFT.
 - It MUST NOT assign two kinds to the same token contract.
 - Its entries MUST be in strictly ascending order, compared first by `kind` as a `uint8`, then by `token` as a `uint160`, then by `tokenId` as a `uint256`. Strict ordering rejects duplicate entries and makes the same assets always produce the same manifest hash.
