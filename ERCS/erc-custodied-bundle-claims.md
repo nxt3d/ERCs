@@ -81,11 +81,13 @@ A manifest MUST satisfy the following rules.
 - It MUST NOT assign two kinds to the same token contract.
 - Compare entries first by `kind` as a `uint8`, then by `token` as a `uint160`, then by `tokenId` as a `uint256`. The entries MUST be in strictly ascending order under this comparison. Strict ordering rejects duplicate entries. It also makes the same assets always produce the same manifest hash.
 
-The variable `entries` holds the manifest as an `Entry[]` array. The manifest hash MUST be computed as follows. The hash records what was deposited. It stays the same as assets are delivered. Two deposits of the same assets produce the same hash. The bundle ID identifies the individual bundle.
+`MANIFEST_FORMAT_VERSION` is a `uint256` constant with value `2`. It identifies this manifest encoding. The variable `entries` holds the manifest as an `Entry[]` array. The manifest hash MUST be computed as follows.
 
 ```solidity
-keccak256(abi.encode(uint256(2), block.chainid, escrow, controllingNFT, controllingTokenId, entries))
+keccak256(abi.encode(MANIFEST_FORMAT_VERSION, block.chainid, escrow, controllingNFT, controllingTokenId, entries))
 ```
+
+The hash records what was deposited. It stays the same as assets are delivered. Two deposits of the same assets produce the same hash. The bundle ID identifies the individual bundle.
 
 ### Bundle lifecycle
 
@@ -125,7 +127,7 @@ event BundleEmptied(uint256 indexed bundleId);
 
 ### Marketplace display
 
-Bundle NFT metadata SHOULD expose the following fields under `properties`. The key for the chain ID is `chain_id`. The key for the bundle ID is `bundle_id`. The keys for the original NFT contract and token ID are `original_nft_contract` and `original_nft_token_id`, respectively. The key for the manifest hash is `manifest_hash`. IDs SHOULD be decimal strings. The hash SHOULD be a 0x-prefixed 32-byte hex string. Before showing the assets, a marketplace SHOULD read the manifest at the escrow. It SHOULD verify the manifest commitment before showing the assets. It SHOULD distinguish the original inventory from assets still held. It SHOULD label an issued bundle NFT as redeem only.
+Bundle NFT metadata SHOULD expose the following fields under `properties`. The key for the chain ID is `chain_id`. The key for the bundle ID is `bundle_id`. The keys for the original NFT contract and token ID are `original_nft_contract` and `original_nft_token_id`, respectively. The key for the manifest hash is `manifest_hash`. IDs SHOULD be decimal strings. The hash SHOULD be a 0x-prefixed 32-byte hex string. Before showing the assets, a marketplace SHOULD read the manifest at the escrow. It SHOULD then verify the manifest against the manifest hash. It SHOULD distinguish the original inventory from assets still held. It SHOULD label an issued bundle NFT as redeem only.
 
 ## Rationale
 
