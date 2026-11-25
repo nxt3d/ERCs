@@ -41,7 +41,7 @@ interface ICustodiedBundleClaim {
 }
 ```
 
-Each deployment on a chain MUST use exactly one escrow. The `escrow` field returned by `bundleClaim(bundleId)` MUST be that escrow's address. Deployments on different chains MAY use different escrow addresses. Implementers MUST publish the chain ID, the escrow address, the asset eligibility policy and the powers of administrators and upgraders. The policy MAY restrict which collections or assets the escrow accepts. The escrow MUST accept deposits from owners who meet the published conditions without requiring individual approval from a protocol operator.
+Each deployment on a chain MUST use exactly one escrow. The `escrow` field returned by `bundleClaim(bundleId)` MUST be that escrow's address. The escrow MAY restrict which collections or assets it accepts. The escrow MUST accept deposits that meet those restrictions without requiring individual approval from a protocol operator.
 
 ### Inventory
 
