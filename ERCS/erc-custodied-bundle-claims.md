@@ -29,7 +29,7 @@ Using an **escrow** contract, NFTs and their controlled assets, such as those in
 
 ### Discovery
 
-The bundle NFT collection MUST implement [ERC-721](./erc-721.md). It MUST return `true` from `supportsInterface(0x68420221)`, the [ERC-165](./erc-165.md) identifier of `ICustodiedBundleClaim`. Each bundle NFT's token ID MUST equal its bundle ID. `bundleClaim(bundleId)` MUST return the record for every known bundle ID, even after the bundle NFT burns. It MUST revert for an unknown bundle ID.
+The bundle NFT collection MUST implement [ERC-721](./erc-721.md). It MUST return `true` from `supportsInterface(0x68420221)`, the [ERC-165](./erc-165.md) identifier of `ICustodiedBundleClaim`. Each bundle NFT's token ID MUST equal its bundle ID. If the bundle ID exists, `bundleClaim(bundleId)` MUST return that bundle's record, including after its bundle NFT burns. If the bundle ID does not exist, it MUST revert.
 
 ```solidity
 interface ICustodiedBundleClaim {
@@ -41,7 +41,7 @@ interface ICustodiedBundleClaim {
 }
 ```
 
-Each deployment on a chain MUST use exactly one escrow. For every known bundle ID, the bundle NFT collection's `bundleClaim(bundleId)` MUST return that escrow's address in `escrow`. Deployments on different chains MAY use different escrow addresses. Implementers MUST publish the chain ID, the escrow address, the asset eligibility policy and the powers of administrators and upgraders. The policy MAY restrict which collections or assets the escrow accepts. The escrow MUST accept deposits from owners who meet the published conditions without requiring individual approval from a protocol operator.
+Each deployment on a chain MUST use exactly one escrow. The `escrow` field returned by `bundleClaim(bundleId)` MUST be that escrow's address. Deployments on different chains MAY use different escrow addresses. Implementers MUST publish the chain ID, the escrow address, the asset eligibility policy and the powers of administrators and upgraders. The policy MAY restrict which collections or assets the escrow accepts. The escrow MUST accept deposits from owners who meet the published conditions without requiring individual approval from a protocol operator.
 
 ### Inventory
 
