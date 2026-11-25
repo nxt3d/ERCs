@@ -1,6 +1,6 @@
 ---
 title: Custodied NFT Bundle Claims
-description: Identify the NFT and inventory backing a bundle NFT and track delivery after the bundle NFT burns
+description: Identify the NFT and inventory backing a bundle NFT and track delivery after the bundle NFT is burned
 author: Prem Makeig (@nxt3d)
 status: Draft
 type: Standards Track
@@ -138,7 +138,7 @@ The seller supplies the controlling NFT in both Base deposit paths. In `deposit`
 
 ## Security Considerations
 
-A collection can advertise any interface identifier and serve arbitrary metadata. Clients need an independent basis for trusting a deployment and the behavior of its admitted tokens. The commitment covers selected entries and quantities. Unlisted balances, future transfers and asset value fall outside it. A token can refuse delivery indefinitely. Wallets should show the pending destination and held mask, including after the bundle NFT burns. Redirecting assets changes where recovery delivers them and deserves explicit confirmation by the beneficiary.
+A collection can advertise any interface identifier and serve arbitrary metadata. Clients need an independent basis for trusting a deployment and the behavior of its admitted tokens. The commitment covers selected entries and quantities. Unlisted balances, future transfers and asset value fall outside it. A token can refuse delivery indefinitely. Wallets should show the pending destination and held mask, including after the bundle NFT is burned. Redirecting assets changes where recovery delivers them and deserves explicit confirmation by the beneficiary.
 
 The Base escrow is a UUPS proxy. Administrators control fee and admission policy, and upgrade authorities can replace code governing existing custody. An interface check gives no assurance about those authorities. A controlling-collection allowlist can narrow admission to reviewed tokens. Each deployment has its own policy and trust assumptions.
 
