@@ -64,7 +64,22 @@ interface IBundleEscrow {
 }
 ```
 
-The escrow MUST take custody of the controlling NFT and every manifest entry before it makes the bundle NFT available. Eligibility does not depend on prior custody by an account bound to the NFT. The source ERC-6551 account is not an escrowed asset, and redemption does not deliver assets back to it. The manifest MUST remain readable and immutable after deposit. A bundle holds at most 32 assets besides the controlling NFT. The manifest MUST list them in strictly ascending order, compared first by `kind` as a `uint8`, then by `token` as a `uint160`, then by `tokenId` as a `uint256`. Strict ordering rejects duplicate entries and makes the same assets always produce the same manifest hash. Kinds 0, 1 and 2 denote [ERC-20](./erc-20.md), ERC-721 and [ERC-1155](./erc-1155.md) respectively. Amounts MUST be positive. ERC-20 entries MUST use ID zero and ERC-721 entries MUST use amount one. A manifest MUST exclude the controlling token and MUST NOT assign two kinds to the same token contract.
+The escrow MUST take custody of the controlling NFT and every manifest entry before it makes the bundle NFT available. Eligibility does not depend on prior custody by an account bound to the NFT. The source ERC-6551 account is not an escrowed asset, and redemption does not deliver assets back to it. The manifest MUST remain readable and immutable after deposit.
+
+Each manifest entry uses one of the following kinds.
+
+| `kind` | Standard | `tokenId` | `amount` |
+|---|---|---|---|
+| 0 | [ERC-20](./erc-20.md) | MUST be 0 | MUST be greater than 0 |
+| 1 | ERC-721 | The token's ID | MUST be 1 |
+| 2 | [ERC-1155](./erc-1155.md) | The token's ID | MUST be greater than 0 |
+
+A manifest MUST satisfy the following rules.
+
+- It holds at most 32 entries. The controlling NFT is not an entry.
+- It MUST NOT include the controlling NFT.
+- It MUST NOT assign two kinds to the same token contract.
+- Its entries MUST be in strictly ascending order, compared first by `kind` as a `uint8`, then by `token` as a `uint160`, then by `tokenId` as a `uint256`. Strict ordering rejects duplicate entries and makes the same assets always produce the same manifest hash.
 
 The commitment MUST be computed as follows using the standard Solidity ABI encoding and the entry tuple defined above. It commits to the original inventory. Delivery progress is recorded separately. Bundle identity also includes the bundle ID because repeated deposits can have the same hash.
 
