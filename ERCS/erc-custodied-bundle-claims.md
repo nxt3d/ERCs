@@ -25,7 +25,7 @@ Eligible NFTs and the assets in their ERC-6551 accounts can be deposited without
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in RFC 2119 and RFC 8174.
 
-The **escrow** is the contract that takes custody of a controlling NFT and its assets. It records each deposit under a number called the **bundle ID**. The **bundle NFT collection** is a separate ERC-721 contract. For each deposit, the escrow has the collection mint one **bundle NFT**, which represents the claim to redeem that deposit. The bundle NFT's token ID is the bundle ID, so this standard uses the two terms interchangeably.
+Using an **escrow** contract, NFTs and their controlled assets, such as those in an ERC-6551 account, are deposited into a **bundle** for a fixed period of time. A **bundle NFT**, which represents the claim to redeem the bundle, is minted for each bundle. Each bundle receives a **bundle ID**, and its bundle NFT uses the same number as its token ID. Bundle ID and token ID can therefore be used interchangeably. The **bundle NFT collection** is the separate ERC-721 contract that mints bundle NFTs.
 
 ### Discovery
 
